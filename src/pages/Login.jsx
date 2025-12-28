@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api from "../api/client.js";
 
 export default function Login() {
   const { login } = useAuth();
@@ -18,7 +19,7 @@ export default function Login() {
 
     try {
       // שליחת בקשה ל-API שלך
-      const res = await axios.post("http://127.0.0.1:5001/auth/login", {
+      const res = await api.post("/auth/login", {
         email,
         password,
       });

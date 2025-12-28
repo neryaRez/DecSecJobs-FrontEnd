@@ -1,0 +1,1582 @@
+
+--- התחלה של README.md ---
+# DevSecJobs
+
+A fullstack job management platform built with **Flask** (backend) and **React + TailwindCSS** (frontend).  
+The project demonstrates clean architecture, secure authentication, and a modular design that separates business logic across models, routes, and services.
+
+---
+
+## 📑 Table of Contents
+- [Overview](#overview)  
+- [Architecture](#architecture)  
+- [Technologies](#technologies)  
+- [Backend (Flask)](#backend-flask)  
+- [Frontend (React + Tailwind)](#frontend-react--tailwind)  
+- [Functionality and Roles](#functionality-and-roles)  
+- [Installation](#installation)  
+- [API Endpoints](#api-endpoints)  
+- [Future Improvements](#future-improvements)  
+- [License](#license)  
+
+---
+
+## 📝 Overview
+DevSecJobs is a platform for publishing jobs, managing applicants, and tracking applications.  
+It supports different user roles (admin, recruiter, applicant) and provides secure JWT-based authentication.  
+
+The system is divided into two parts:  
+- **Flask backend** exposing REST APIs.  
+- **React frontend** consuming the APIs with protected routes.  
+
+---
+
+## 🏗️ Architecture
+```
+React (Vite + Tailwind)
+       ⬇️ REST API calls
+Flask (Blueprints + SQLAlchemy + JWT)
+       ⬇️ ORM
+Database (SQLite / MySQL)
+```
+
+- **Users** – system accounts (applicants, recruiters, admins).  
+- **Applicants** – candidate profiles linked to users.  
+- **Jobs** – job postings created by recruiters/admins.  
+- **Applications** – relation between applicants and jobs, including status and score.  
+
+---
+
+## ⚙️ Technologies
+### Backend
+- **Flask** – REST API server.  
+- **SQLAlchemy** – ORM for data modeling.  
+- **Flask-JWT-Extended** – authentication and token management.  
+- **Flask-CORS** – cross-origin support.  
+- **Werkzeug.security** – password hashing.  
+- **dotenv** – environment variable management.  
+
+### Frontend
+- **React (Vite)** – SPA client.  
+- **React Router** – routing and protected routes.  
+- **TailwindCSS** – utility-based styling.  
+- **Context API** – global authentication state.  
+
+---
+
+## 🔐 Functionality and Roles
+
+### 👤 User (Applicant)
+- **Register/Login** – create an account and authenticate with JWT tokens.  
+- **Profile Management** – complete and update a personal profile (skills, experience, education, resume path).  
+- **Job Search** – view available jobs through the **Jobs Feed**.  
+- **Apply to Jobs** – submit an application to open jobs.  
+- **Track Applications** – monitor the status of submitted applications (`pending`, `accepted`, `rejected`) and see assigned scores.  
+
+This ensures applicants can manage their career information, apply efficiently, and stay updated about their progress.  
+
+---
+
+### 🛠️ Admin (or Recruiter)
+- **Job Management** – create, update, and close job postings.  
+- **Application Review** – view applicants for specific jobs, including their skills, resume path, and computed scores.  
+- **Decision Making** – update application statuses (approve/reject) and assign scores to reflect applicant suitability.  
+- **User Management** – manage system accounts (promote users to admin, deactivate users, etc.).  
+- **Dashboard Access** – admins access special dashboards (`/dashboard`, `/dashboard/jobs`, `/dashboard/applications`) not visible to normal users.  
+
+This separation enforces a clear distinction between candidate-facing features and employer/recruiter tools, aligning with industry practices for role-based access.  
+
+---
+
+## 🖥️ Backend (Flask)
+The backend is organized with Blueprints and Models for maintainability:  
+
+- **Models/**  
+  - `User` – system users with password hashing and admin flag.  
+  - `Applicant` – candidate profile linked to a user.  
+  - `Job` – job posting with required skills and publisher.  
+  - `Application` – application record connecting applicant and job.  
+
+- **Routers/**  
+  - `auth_router` – registration, login, refresh.  
+  - `users_router` – manage users.  
+  - `jobs_router` – CRUD operations for jobs.  
+  - `applicant_router` – manage applicants.  
+  - `application_router` – apply to jobs and manage applications.  
+
+- **main.py** – app factory, DB initialization, CORS and JWT configuration.  
+
+---
+
+## 🎨 Frontend (React + Tailwind)
+- **App.jsx** – routes setup, including public, user-protected, and admin-protected paths.  
+- **AuthContext** – provides authentication state and token handling.  
+- **Pages**:
+  - `Login`, `Register` – authentication forms.  
+  - `UserHome` – user dashboard.  
+  - `Dashboard` – admin panel for jobs and applications.  
+  - `JobsFeed` – public list of jobs.  
+  - `MyApplications` – applications submitted by the current user.  
+  - `CompleteProfile` – user profile completion.  
+
+---
+
+## ⚡ Installation
+### Backend
+```bash
+# Python environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate     # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the server
+python main.py
+```
+Default: `http://localhost:5001`
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Default: `http://localhost:5173`
+
+---
+
+## 📡 API Endpoints
+### Auth
+- `POST /auth/register` – register new user.  
+- `POST /auth/login` – login and get tokens.  
+- `POST /auth/refresh` – refresh access token.  
+
+### Jobs
+- `GET /jobs` – list jobs.  
+- `POST /jobs` – create job (admin).  
+
+### Applicants
+- `GET /applicants` – list applicants.  
+- `POST /applicants` – create applicant profile.  
+
+### Applications
+- `POST /apply/<job_id>` – apply to a job.  
+- `GET /apply/user/<user_id>` – get user’s applications.  
+
+---
+
+## 🚀 Future Improvements
+- Role-based access control (RBAC).  
+- Integration with PostgreSQL for production.  
+- Unit and integration testing with pytest.  
+- Improved admin dashboard UI with analytics.  
+- Resume parsing and AI-based application scoring.  
+
+---
+
+## 📄 License
+MIT License.  
+
+--- סוף של README.md ---
+
+
+--- התחלה של src/main.jsx ---
+// 📁 src/main.jsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App.jsx";
+import "./output.css";
+import { AuthProvider } from "./context/AuthContext.jsx";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
+  </React.StrictMode>
+);
+
+
+--- סוף של src/main.jsx ---
+
+
+--- התחלה של src/App.jsx ---
+// 📁 src/App.jsx
+import { Routes, Route, Navigate } from "react-router-dom";
+import Navbar from "./components/Navbar.jsx";
+import UserHome from "./pages/UserHome.jsx";
+import Login from "./pages/Login.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Dashboard from "./pages/Dashboard.jsx"; // ניצור בקרוב דשבורד בסיסי
+import Register from "./pages/Register.jsx";
+import Jobs from "./pages/jobs.jsx";
+import MyApplications from "./pages/MyApplications.jsx";
+import JobsFeed from "./pages/JobsFeed.jsx";
+import CompleteProfile from "./pages/CompleteProfile.jsx";
+import DashboardApplications from "./pages/DashboardApplications.jsx";
+export default function App() {
+  return (
+    <>
+      <Navbar />
+      <Routes>
+        {/* מסך הבית הציבורי */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* דפי התחברות */}
+        <Route path="/login" element={<Login />} />
+
+        {/* דף בית של משתמש מחובר (User) */}
+        <Route
+          path="/user-home"
+          element={
+            <ProtectedRoute>
+              <UserHome />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* דשבורד של אדמין */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute adminOnly>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* אם מגיעים לנתיב לא קיים */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard/jobs" element={<ProtectedRoute adminOnly><Jobs /></ProtectedRoute>} />
+        <Route path="/my-applications" element={<ProtectedRoute><MyApplications /></ProtectedRoute>} />
+        <Route path="/jobs-feed" element={<JobsFeed />} />
+        <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
+        <Route path="/dashboard/applications" element={<ProtectedRoute adminOnly><DashboardApplications /></ProtectedRoute>} />
+      </Routes>
+    </>
+  );
+}
+
+function LandingPage() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600 via-indigo-500 text-center p-4">
+      <h1 className="text-5xl font-extrabold text-white drop-shadow-lg">
+        Welcome to DevSecJobs!
+      </h1>
+      <h2 className="text-2xl font-semibold text-white drop-shadow-md mt-6">
+        הדרך שלך להצליח !
+      </h2>
+      <p className="text-2xl text-white drop-shadow-sm mt-4">
+        מחוייבים אליך לאורך כל הדרך ואוהבים אותך ❤️
+      </p>
+    </div>
+  );
+}
+
+--- סוף של src/App.jsx ---
+
+
+--- התחלה של src/context/AuthContext.jsx ---
+// 📁 src/context/AuthContext.jsx
+import { createContext, useState, useEffect, useContext } from "react";
+
+export const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // מצב טעינה בזמן בדיקה ראשונית
+
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
+
+      if (token && storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error("⚠️ Failed to parse user from localStorage:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    } finally {
+      setLoading(false); // תמיד מסיים טעינה
+    }
+  }, []);
+
+  const login = (userData, token) => {
+    try {
+      if (token) localStorage.setItem("token", token);
+      if (userData) localStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
+    } catch (error) {
+      console.error("⚠️ Failed to save user to localStorage:", error);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// Hook מותאם אישית לשימוש פשוט ב-AuthContext
+export function useAuth() {
+  return useContext(AuthContext);
+}
+
+--- סוף של src/context/AuthContext.jsx ---
+
+
+--- התחלה של src/api/client.js ---
+// קליינט Axios עם baseURL אחיד
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  headers: { "Content-Type": "application/json" },
+});
+
+export default api;
+
+--- סוף של src/api/client.js ---
+
+
+--- התחלה של src/pages/DashboardApplications.jsx ---
+import { useEffect, useState } from "react";
+import api from "../api/client.js";
+import { useAuth } from "../context/AuthContext.jsx";
+
+export default function DashboardApplications() {
+  const { user } = useAuth();
+  const token = localStorage.getItem("token");
+
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
+  useEffect(() => {
+    if (!user || !user.is_admin) return;
+
+    (async () => {
+      try {
+        const res = await api.get(`/apply/publisher/${user.id}`, {
+          headers: authHeader,
+        });
+        setApplications(res.data || []);
+      } catch (err) {
+        console.error("שגיאה בטעינת מועמדויות:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [user]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-r from-gray-100 to-blue-200 p-6">
+      <h1 className="text-4xl font-assistant text-gray-800 text-center mb-10">
+        מועמדויות למשרות שפרסמת 📄
+      </h1>
+
+      {loading ? (
+        <p className="text-center text-gray-600">טוען מועמדויות…</p>
+      ) : applications.length === 0 ? (
+        <p className="text-center text-gray-600">
+          לא הוגשו מועמדויות למשרות שלך עדיין.
+        </p>
+      ) : (
+        <div className="grid gap-6 max-w-4xl mx-auto">
+          {applications.map((app) => (
+            <div
+              key={app.id}
+              className="bg-white rounded-xl shadow hover:shadow-xl transition p-6"
+            >
+              <h2 className="text-2xl font-semibold text-gray-800">
+                {app.job_title}
+              </h2>
+              <p className="text-gray-600">{app.job_description}</p>
+
+              <p className="mt-2">
+                <span className="font-bold">מועמד:</span>{" "}
+                {app.applicant_name || "לא צוין"}
+              </p>
+              <p>
+                <span className="font-bold">סטטוס:</span>{" "}
+                <span
+                  className={`${
+                    app.status === "pending"
+                      ? "text-yellow-600"
+                      : app.status === "approved"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {app.status}
+                </span>
+              </p>
+              <p>
+                <span className="font-bold">ציון התאמה:</span>{" "}
+                <span className="text-blue-600 font-bold">{app.score}</span>
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+--- סוף של src/pages/DashboardApplications.jsx ---
+
+
+--- התחלה של src/pages/Login.jsx ---
+// 📁 src/pages/Login.jsx
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext.jsx";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import api from "../api/client.js";
+
+export default function Login() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // שליחת בקשה ל-API שלך
+      const res = await api.post("/auth/login", {
+        email,
+        password,
+      });
+
+      // שמירת טוקן + פרטי משתמש
+      login(res.data.user, res.data.access_token);
+
+      // הפניה למסך המתאים
+      if (res.data.user.is_admin) {
+        navigate("/dashboard");
+      } else {
+        navigate("/user-home");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("שגיאה בהתחברות - בדוק את פרטי המשתמש שלך");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md"
+      >
+        <h1 className="text-3xl font-bold text-gray-800 text-center mb-6">
+          התחברות 🔑
+        </h1>
+
+        <div className="mb-4">
+          <label className="block text-gray-700 font-medium mb-1">אימייל</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-400 focus:outline-none"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-gray-700 font-medium mb-1">סיסמה</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-pink-400 focus:outline-none"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-2 rounded-lg font-semibold hover:scale-105 hover:shadow-lg transition disabled:opacity-50"
+        >
+          {loading ? "מתחבר..." : "התחבר"}
+        </button>
+
+        <p className="text-center text-gray-600 mt-4">
+          אין לך חשבון?{" "}
+          <a href="/register" className="text-pink-600 hover:underline">
+            צור אחד כאן
+          </a>
+        </p>
+      </form>
+    </div>
+  );
+}
+
+--- סוף של src/pages/Login.jsx ---
+
+
+--- התחלה של src/pages/UserHome.jsx ---
+// 📁 src/pages/UserHome.jsx
+import { useNavigate } from "react-router-dom";
+
+export default function UserHome() {
+  const navigate = useNavigate();
+
+  const cards = [
+    {
+      title: "המועמדויות שלי 📄",
+      desc: "צפה ונהל את כל המשרות שהגשת אליהן",
+      color: "from-purple-400 to-pink-500",
+      onClick: () => navigate("/my-applications"),
+    },
+    {
+      title: "המגייסים שלי 👥",
+      desc: "נהל את הקשר שלך עם המגייסים במערכת",
+      color: "from-green-400 to-blue-500",
+      onClick: () => navigate("/recruiters"),
+    },
+    {
+      title: "משרות פתוחות 📢",
+      desc: "צפה בכל המשרות הפתוחות והגש מועמדות",
+      color: "from-yellow-400 to-red-300",
+      onClick: () => navigate("/jobs-feed"),
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-r from-gray-200 to-blue-300 p-10">
+      <h1 className="text-4xl font-assistant text-gray-800 text-center mb-12">
+        Welcome to DevSecJobs! 🚀
+      </h1>
+
+      {/* שלוש כרטיסיות יפות */}
+      <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        {cards.map((card, i) => (
+          <div
+            key={i}
+            onClick={card.onClick}
+            className={`cursor-pointer bg-gradient-to-r ${card.color} rounded-2xl shadow-lg hover:scale-105 hover:shadow-2xl transition p-8 text-white`}
+          >
+            <h2 className="text-2xl font-bold mb-3">{card.title}</h2>
+            <p className="text-white/90">{card.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+--- סוף של src/pages/UserHome.jsx ---
+
+
+--- התחלה של src/pages/MyApplications.jsx ---
+import { useEffect, useState } from "react";
+import api from "../api/client.js";
+import { useAuth } from "../context/AuthContext.jsx";
+
+export default function MyApplications() {
+  const { user } = useAuth();
+  const token = localStorage.getItem("token");
+
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
+  // טעינת המועמדויות
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const res = await api.get(`/apply/user/${user.id}`, { headers: authHeader });
+        setApplications(res.data || []);
+      } catch (err) {
+        console.error("שגיאה בטעינת מועמדויות:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [user]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-r from-gray-100 to-blue-200 p-6">
+      <h1 className="text-4xl font-assistant text-gray-800 text-center mb-10">
+        המועמדויות שלי 📄
+      </h1>
+
+      {loading ? (
+        <p className="text-center text-gray-600">טוען מועמדויות…</p>
+      ) : applications.length === 0 ? (
+        <p className="text-center text-gray-600">לא הוגשו מועמדויות עדיין.</p>
+      ) : (
+        <div className="grid gap-6 max-w-3xl mx-auto">
+  {applications.map((app) => (
+    <div
+      key={app.id}
+      className="bg-white rounded-xl shadow hover:shadow-xl transition p-6"
+    >
+      <h2 className="text-2xl font-semibold text-gray-800">
+        {app.job_title || "משרה ללא שם"}
+      </h2>
+
+      <p className="text-gray-600 mt-2">
+        {app.description || "אין תיאור זמין"}
+      </p>
+
+      <p className="text-gray-500 mt-3">
+        סטטוס:{" "}
+        <span
+          className={`font-semibold ${
+            app.status === "pending"
+              ? "text-yellow-600"
+              : app.status === "approved"
+              ? "text-green-600"
+              : "text-red-600"
+          }`}
+        >
+          {app.status || "לא צוין"}
+        </span>
+      </p>
+
+      <p className="text-gray-700 mt-2">
+        ציון התאמה:{" "}
+        <span className="font-bold text-blue-600">
+          {app.score !== null ? app.score : "לא חושב עדיין"}
+        </span>
+      </p>
+
+      <p className="text-gray-700 mt-3">
+        {app.notes || "אין הערות נוספות"}
+      </p>
+    </div>
+  ))}
+</div>
+
+      )}
+    </div>
+  );
+}
+
+--- סוף של src/pages/MyApplications.jsx ---
+
+
+--- התחלה של src/pages/jobs.jsx ---
+import { useEffect, useState } from "react";
+import api from "../api/client.js";
+import { useAuth } from "../context/AuthContext.jsx";
+
+export default function Jobs() {
+  const { user } = useAuth();
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+
+  const [form, setForm] = useState({
+    title: "",
+    employment_type: "",
+    work_location: "",
+    description: "",
+    required_technologies: "",
+    required_experience: "",
+    is_open: true,
+  });
+
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
+  // טעינת משרות (לפי ה־API שלך – GET /jobs/)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get("/jobs/", { headers: authHeader });
+        setJobs(res.data || []);
+      } catch (e) {
+        console.error(e);
+        alert("נכשל בטעינת משרות");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const onChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
+  };
+
+  // יצירת משרה (POST /jobs/) — דורש JWT + אדמין, ושולחים publisher_id לפי המודל שלך
+  const createJob = async (e) => {
+    e.preventDefault();
+    if (!user) return alert("יש להתחבר");
+    if (!form.title.trim()) return alert("חובה למלא כותרת משרה");
+
+    try {
+      const payload = {
+        ...form,
+        required_experience: form.required_experience
+          ? Number(form.required_experience)
+          : null,
+        publisher_id: user.id, // ה־Backend לא גוזר זאת מהטוקן, אז שולחים מפה
+      };
+      await api.post("/jobs/", payload, { headers: authHeader });
+      // רענון הרשימה
+      const list = await api.get("/jobs/", { headers: authHeader });
+      setJobs(list.data || []);
+      setCreating(false);
+      setForm({
+        title: "",
+        employment_type: "",
+        work_location: "",
+        description: "",
+        required_technologies: "",
+        required_experience: "",
+        is_open: true,
+      });
+    } catch (e) {
+      console.error(e);
+      alert("יצירת משרה נכשלה (נדרש Admin + JWT תקף)");
+    }
+  };
+
+  // מחיקת משרה (DELETE /jobs/<id>) — דורש JWT + אדמין
+  const deleteJob = async (id) => {
+    if (!confirm("למחוק את המשרה?")) return;
+    try {
+      await api.delete(`/jobs/${id}`, { headers: authHeader });
+      setJobs((prev) => prev.filter((j) => j.id !== id));
+    } catch (e) {
+      console.error(e);
+      alert("מחיקה נכשלה (נדרש Admin + JWT)");
+    }
+  };
+
+  // עדכון סטטוס is_open (PUT /jobs/<id>)
+  const toggleOpen = async (job) => {
+    try {
+      const res = await api.put(
+        `/jobs/${job.id}`,
+        { is_open: !job.is_open },
+        { headers: authHeader }
+      );
+      setJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, is_open: res.data.is_open } : j)));
+    } catch (e) {
+      console.error(e);
+      alert("עדכון סטטוס נכשל");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-500 via-gray-600 to-blue-400 p-6">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-assistant-semibold text-gray-800">המשרות שלי</h1>
+          <button
+            onClick={() => setCreating(true)}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-500 text-white hover:scale-105 hover:shadow-md transition"
+          >
+            + משרה חדשה
+          </button>
+        </div>
+
+        {creating && (
+          <form
+            onSubmit={createJob}
+            className="bg-white rounded-xl shadow p-6 mb-8 grid md:grid-cols-2 gap-4"
+          >
+            <input
+              name="title"
+              value={form.title}
+              onChange={onChange}
+              placeholder="כותרת משרה *"
+              className="border rounded-lg px-3 py-2"
+              required
+            />
+            <input
+              name="employment_type"
+              value={form.employment_type}
+              onChange={onChange}
+              placeholder="סוג העסקה (Full/Part)"
+              className="border rounded-lg px-3 py-2"
+            />
+            <input
+              name="work_location"
+              value={form.work_location}
+              onChange={onChange}
+              placeholder="מיקום עבודה (Office/Home/Hybrid)"
+              className="border rounded-lg px-3 py-2"
+            />
+            <input
+              name="required_technologies"
+              value={form.required_technologies}
+              onChange={onChange}
+              placeholder="טכנולוגיות נדרשות (CSV: AWS, Docker, K8s)"
+              className="border rounded-lg px-3 py-2 md:col-span-2"
+            />
+            <input
+              type="number"
+              min="0"
+              name="required_experience"
+              value={form.required_experience}
+              onChange={onChange}
+              placeholder="שנות ניסיון נדרשות"
+              className="border rounded-lg px-3 py-2"
+            />
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="is_open"
+                checked={form.is_open}
+                onChange={onChange}
+              />
+              משרה פתוחה לקליטה
+            </label>
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={onChange}
+              placeholder="תיאור משרה"
+              className="border rounded-lg px-3 py-2 md:col-span-2"
+              rows={3}
+            />
+            <div className="md:col-span-2 flex gap-3">
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-500 text-white hover:scale-105 transition"
+              >
+                שמור
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreating(false)}
+                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
+              >
+                בטל
+              </button>
+            </div>
+          </form>
+        )}
+
+        {loading ? (
+          <p>טוען משרות…</p>
+        ) : jobs.length === 0 ? (
+          <p>אין משרות עדיין.</p>
+        ) : (
+          <div className="grid gap-4">
+            {jobs.map((job) => (
+              <div
+                key={job.id}
+                className="bg-gradient-to-r from-green-400 to-blue-500 rounded-xl shadow p-5 flex flex-col md:flex-row md:items-center md:justify-between"
+              >
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-800">{job.title}</h3>
+                  <p className="text-gray-500 mt-1">
+                    {job.work_location || "—"} · {job.employment_type || "—"} ·{" "}
+                    {job.required_experience != null ? `${job.required_experience}y exp` : "ניסיון לא צוין"}
+                  </p>
+                  {job.required_technologies && (
+                    <p className="text-gray-600 mt-2">
+                      טכנולוגיות: {job.required_technologies}
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-3 mt-4 md:mt-0">
+                  <button
+                    onClick={() => toggleOpen(job)}
+                    className={`px-3 py-1.5 rounded-lg text-white ${
+                      job.is_open ? "bg-emerald-600" : "bg-slate-500"
+                    }`}
+                  >
+                    {job.is_open ? "פתוחה" : "סגורה"}
+                  </button>
+                  <button
+                    onClick={() => deleteJob(job.id)}
+                    className="px-3 py-1.5 rounded-lg bg-red-600 text-white"
+                  >
+                    מחק
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+--- סוף של src/pages/jobs.jsx ---
+
+
+--- התחלה של src/pages/JobsFeed.jsx ---
+import { useEffect, useState } from "react";
+import api from "../api/client.js";
+import { useAuth } from "../context/AuthContext.jsx";
+
+export default function JobsFeed() {
+  const { user } = useAuth();
+  const token = localStorage.getItem("token");
+
+  const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
+  // טעינת כל המשרות
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get("/jobs/", { headers: authHeader });
+        setJobs(res.data || []);
+      } catch (err) {
+        console.error("שגיאה בטעינת משרות:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // טעינת המועמדויות של המשתמש
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const res = await api.get(`/apply/user/${user.id}`, { headers: authHeader });
+        setApplications(res.data || []);
+      } catch (err) {
+        console.error("שגיאה בטעינת מועמדויות:", err);
+      }
+    })();
+  }, [user]);
+
+  // בדיקה אם כבר הוגשה מועמדות
+  const hasApplied = (jobId) => {
+    return applications.some((app) => app.job_id === jobId);
+  };
+
+  // הגשת מועמדות למשרה
+  const applyToJob = async (jobId) => {
+    if (!user) return alert("יש להתחבר קודם");
+    try {
+      await api.post(
+        `/apply/${jobId}`,
+        { applicant_id: user.id },
+        { headers: authHeader }
+      );
+      alert("המועמדות נשלחה בהצלחה ✅");
+      setApplications((prev) => [...prev, { job_id: jobId, applicant_id: user.id }]);
+    } catch (err) {
+      console.error("שגיאה בהגשת מועמדות:", err);
+      alert("שגיאה בהגשת מועמדות ❌");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-r from-gray-200 to-blue-300 p-6">
+      <br />
+      {loading ? (
+        <p className="text-center text-gray-600">טוען משרות…</p>
+      ) : jobs.length === 0 ? (
+        <p className="text-center text-gray-600">אין משרות כרגע.</p>
+      ) : (
+        <div className="grid gap-6 max-w-3xl mx-auto">
+          {jobs.map((job) => (
+            <div
+              key={job.id}
+              className="bg-gradient-to-r from-yellow-200 to-green-300 rounded-xl shadow hover:shadow-xl transition p-6"
+            >
+              <h2 className="text-2xl font-semibold text-gray-800">{job.title}</h2>
+              <p className="text-gray-500 mt-1">
+                {job.work_location || "מיקום לא צוין"} · {job.employment_type || "היקף לא צוין"}
+              </p>
+              <p className="text-gray-700 mt-3">{job.description}</p>
+              <button
+                onClick={() => applyToJob(job.id)}
+                disabled={hasApplied(job.id)}
+                className={`mt-4 px-5 py-2 rounded-lg text-white transition ${
+                  hasApplied(job.id)
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-purple-600 to-pink-500 hover:scale-105 hover:shadow-lg"
+                }`}
+              >
+                {hasApplied(job.id) ? "כבר הוגשה מועמדות" : "הגש מועמדות"}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+--- סוף של src/pages/JobsFeed.jsx ---
+
+
+--- התחלה של src/pages/Register.jsx ---
+// 📁 src/pages/Register.jsx
+import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
+import api from "../api/client.js";
+
+export default function Register() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await api.post("/auth/register", {
+        username,
+        email,
+        password,
+        is_admin: isAdmin, // ✅ שולחים ל-Backend
+      });
+
+      // שמירת המשתמש ו-token ב-AuthContext + localStorage
+      login(res.data.user, res.data.access_token);
+
+      // הפניה למסך המתאים
+      if (res.data.user.is_admin) {
+        navigate("/dashboard");
+      } else {
+        navigate("/complete-profile"); // ניצור בקרוב דף השלמת פרופיל
+      }
+    } catch (error) {
+      console.error(error);
+      alert("שגיאה בהרשמה - אנא נסה שוב");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-purple-600">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md"
+      >
+        <h1 className="text-3xl font-bold text-gray-800 text-center mb-6">
+          הרשמה 📝
+        </h1>
+
+        <div className="mb-4">
+          <label className="block text-gray-700 font-medium mb-1">
+            שם משתמש
+          </label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-400 focus:outline-none"
+            placeholder="בחר שם משתמש"
+            required
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-gray-700 font-medium mb-1">אימייל</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-400 focus:outline-none"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-gray-700 font-medium mb-1">סיסמה</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-400 focus:outline-none"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+
+        <div className="mb-6 flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isAdmin}
+            onChange={(e) => setIsAdmin(e.target.checked)}
+          />
+          <label className="text-gray-700 font-medium">אני מגייס (Recruiter)</label>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg font-semibold hover:scale-105 hover:shadow-lg transition disabled:opacity-50"
+        >
+          {loading ? "נרשם..." : "צור חשבון"}
+        </button>
+
+        <p className="text-center text-gray-600 mt-4">
+          כבר יש לך חשבון?{" "}
+          <a href="/login" className="text-purple-600 hover:underline">
+            התחבר כאן
+          </a>
+        </p>
+      </form>
+    </div>
+  );
+}
+
+--- סוף של src/pages/Register.jsx ---
+
+
+--- התחלה של src/pages/CompleteProfile.jsx ---
+import { useState } from "react";
+import api from "../api/client.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useNavigate } from "react-router-dom";
+
+export default function CompleteProfile() {
+  const { user } = useAuth();
+  const token = localStorage.getItem("token");
+  const navigate = useNavigate();
+
+  const [name, setName] = useState(user?.username || "");
+  const [languages, setLanguages] = useState("");
+  const [technologies, setTechnologies] = useState("");
+  const [flagshipProject, setFlagshipProject] = useState("");
+  const [lastJob, setLastJob] = useState("");
+  const [education, setEducation] = useState("");
+  const [yearsExperience, setYearsExperience] = useState("");
+  const [resumePath, setResumePath] = useState("");
+
+  const [loading, setLoading] = useState(false);
+
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await api.put(
+        `/applicants/${user.applicant_id}`, // ⚡ צריך להתאים לנתיב אצלך בבקאנד
+        {
+          name,
+          languages,
+          technologies,
+          flagship_project: flagshipProject,
+          last_job: lastJob,
+          education,
+          years_experience: parseInt(yearsExperience, 10) || 0,
+          resume_path: resumePath,
+        },
+        { headers: authHeader }
+      );
+
+      alert("הפרופיל עודכן בהצלחה ✅");
+      navigate("/user-home"); // אחרי שמילא עוברים לפיד
+    } catch (err) {
+      console.error("שגיאה בעדכון פרופיל:", err);
+      alert("שגיאה בעדכון פרופיל ❌");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 to-blue-500 p-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-xl shadow-xl p-8 w-full max-w-2xl"
+      >
+        <h1 className="text-3xl font-bold text-gray-800 text-center mb-8">
+          השלמת פרופיל מועמד 👤
+        </h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              שם מלא
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              שפות תכנות
+            </label>
+            <input
+              type="text"
+              value={languages}
+              onChange={(e) => setLanguages(e.target.value)}
+              placeholder="Python, JavaScript, Go..."
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              טכנולוגיות
+            </label>
+            <input
+              type="text"
+              value={technologies}
+              onChange={(e) => setTechnologies(e.target.value)}
+              placeholder="AWS, Docker, Kubernetes..."
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              פרויקט דגל
+            </label>
+            <input
+              type="text"
+              value={flagshipProject}
+              onChange={(e) => setFlagshipProject(e.target.value)}
+              placeholder="פרויקט מיוחד שאתה גאה בו"
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              מקום עבודה אחרון
+            </label>
+            <input
+              type="text"
+              value={lastJob}
+              onChange={(e) => setLastJob(e.target.value)}
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              השכלה
+            </label>
+            <input
+              type="text"
+              value={education}
+              onChange={(e) => setEducation(e.target.value)}
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              שנות ניסיון
+            </label>
+            <input
+              type="number"
+              value={yearsExperience}
+              onChange={(e) => setYearsExperience(e.target.value)}
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              קובץ קו"ח (נתיב/URL)
+            </label>
+            <input
+              type="text"
+              value={resumePath}
+              onChange={(e) => setResumePath(e.target.value)}
+              placeholder="למשל: uploads/resume.pdf"
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-400"
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="mt-8 w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 rounded-lg font-semibold hover:scale-105 transition disabled:opacity-50"
+        >
+          {loading ? "שומר..." : "שמור פרופיל"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+--- סוף של src/pages/CompleteProfile.jsx ---
+
+
+--- התחלה של src/pages/Dashboard.jsx ---
+// 📁 src/pages/Dashboard.jsx
+export default function Dashboard() {
+  const cards = [
+    {
+      title: "המשרות שלי",
+      description: "צפה ונהל את כל המשרות שפרסמת במערכת",
+      link: "/dashboard/jobs",
+      color: "from-blue-500 to-purple-600",
+    },
+    {
+      title: "מועמדויות שהוגשו",
+      description: "בדוק מי הגיש מועמדות למשרות שלך ונהל את הסטטוס",
+      link: "/dashboard/applications",
+      color: "from-green-400 to-green-700",
+    },
+    {
+      title: "מאגר מועמדים",
+      description: "גישה לרשימת מועמדים פוטנציאליים במערכת",
+      link: "/dashboard/applicants",
+      color: "from-pink-500 to-purple-500",
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-500 via-gray-600 to-blue-400 p-10 flex flex-col items-center">
+      {/* כותרת גדולה ובולטת */}
+      <h1 className="text-5xl font-assistant text-white  drop-shadow-xl mb-12">
+        <br />
+        Dashboard Manager 📊
+      </h1>
+     
+
+
+      {/* רשת הכרטיסים */}
+      <div className="grid md:grid-cols-3 gap-8 max-w-6xl w-full">
+        {cards.map((card) => (
+          <div
+            key={card.title}
+            className={`bg-gradient-to-r ${card.color} text-white rounded-2xl shadow-xl p-8 hover:scale-105 hover:shadow-2xl transition cursor-pointer`}
+            onClick={() => (window.location.href = card.link)}
+          >
+            <h2 className="text-2xl font-bold mb-3">{card.title}</h2>
+            <p className="text-white/90">{card.description}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* כפתור צף ליצירת משרה */}
+      <button
+        onClick={() => alert("פתיחת טופס יצירת משרה חדשה")}
+        className="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 text-white text-4xl flex items-center justify-center shadow-2xl hover:scale-110 hover:shadow-pink-400/80 transition"
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+--- סוף של src/pages/Dashboard.jsx ---
+
+
+--- התחלה של src/components/Navbar.jsx ---
+// 📁 src/components/Navbar.jsx
+import { NavLink } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
+
+export default function Navbar() {
+  const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  const linkClass = ({ isActive }) =>
+    `transition-colors hover:text-yellow-300 ${
+      isActive ? "font-bold underline underline-offset-4" : ""
+    }`;
+
+  return (
+    <header className="bg-gradient-to-r from-purple-600 to-pink-500 shadow-lg sticky top-0 z-50">
+      <nav className="max-w-6xl mx-auto flex items-center justify-between px-6 py-3">
+        {/* לוגו */}
+        <NavLink
+          to="/"
+          className="text-3xl font-extrabold text-white tracking-wide hover:scale-105 transition-transform"
+        >
+          DevSecJobs
+        </NavLink>
+
+        {/* תפריט דסקטופ */}
+        <div className="hidden md:flex gap-6 items-center">
+          {!user && (
+            <>
+              <NavLink
+                to="/"
+                className="px-5 py-2 rounded-lg text-white font-medium hover:bg-white/20 transition-all"
+              >
+                Home
+              </NavLink>
+              <NavLink
+                to="/login"
+                className="px-5 py-2 rounded-lg text-white font-medium hover:bg-white/20 transition-all"
+              >
+                Login
+              </NavLink>
+              <NavLink
+                to="/register"
+                className="px-5 py-2 rounded-lg bg-purple-600 text-white font-semibold shadow hover:shadow-md hover:scale-105 transition"
+              >
+                Sign Up
+              </NavLink>
+            </>
+          )}
+
+          {user && (
+            <>
+              <NavLink
+                to={user.is_admin ? "/dashboard" : "/user-home"}
+                className={linkClass}
+              >
+                Home
+              </NavLink>
+              <button
+                onClick={logout}
+                className="ml-4 text-white hover:text-red-300"
+              >
+                Logout
+              </button>
+              <span className="ml-2 text-white">👤</span>
+            </>
+          )}
+        </div>
+
+        {/* תפריט מובייל */}
+        <button
+          className="md:hidden text-white"
+          onClick={() => setOpen(!open)}
+        >
+          {open ? <X /> : <Menu />}
+        </button>
+      </nav>
+
+      {/* תפריט מובייל נפתח */}
+      {open && (
+        <div className="md:hidden flex flex-col gap-4 bg-white/95 text-gray-900 px-6 py-4">
+          {!user && (
+            <>
+              <NavLink
+                to="/"
+                className={linkClass}
+                onClick={() => setOpen(false)}
+              >
+                Home
+              </NavLink>
+              <NavLink
+                to="/login"
+                className={linkClass}
+                onClick={() => setOpen(false)}
+              >
+                Login
+              </NavLink>
+              <NavLink
+                to="/register"
+                className="px-4 py-1.5 bg-pink-600 text-white rounded-full"
+                onClick={() => setOpen(false)}
+              >
+                Sign Up
+              </NavLink>
+            </>
+          )}
+
+          {user && (
+            <>
+              <NavLink
+                to={user.is_admin ? "/dashboard" : "/user-home"}
+                className={linkClass}
+                onClick={() => setOpen(false)}
+              >
+                Home
+              </NavLink>
+              <button
+                onClick={() => {
+                  logout();
+                  setOpen(false);
+                }}
+              >
+                Logout
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </header>
+  );
+}
+
+--- סוף של src/components/Navbar.jsx ---
+
+
+--- התחלה של src/components/ProtectedRoute.jsx ---
+// 📁 src/components/ProtectedRoute.jsx
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
+
+export default function ProtectedRoute({ children, adminOnly = false }) {
+  const { user, loading } = useAuth();
+
+  // מצב טעינה – לא נציג כלום עד שנסיים לבדוק אם יש משתמש
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-600">
+        טוען...
+      </div>
+    );
+  }
+
+  // אם אין משתמש מחובר → נשלח אותו ל-login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // אם נדרש אדמין אבל המשתמש לא אדמין → שולחים אותו ל-home
+  if (adminOnly && !user.is_admin) {
+    return <Navigate to="/user-home" replace />;
+  }
+
+  // אחרת – מציגים את המסך המקורי
+  return children;
+}
+
+--- סוף של src/components/ProtectedRoute.jsx ---
+

@@ -6,7 +6,7 @@ import Login from "./pages/Login.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Dashboard from "./pages/Dashboard.jsx"; // ניצור בקרוב דשבורד בסיסי
 import Register from "./pages/Register.jsx";
-import Jobs from "./pages/Jobs.jsx";
+import Jobs from "./pages/jobs.jsx";
 import MyApplications from "./pages/MyApplications.jsx";
 import JobsFeed from "./pages/JobsFeed.jsx";
 import CompleteProfile from "./pages/CompleteProfile.jsx";

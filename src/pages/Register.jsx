@@ -3,6 +3,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import api from "../api/client.js";
 
 export default function Register() {
   const { login } = useAuth();
@@ -19,7 +20,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://127.0.0.1:5001/auth/register", {
+      const res = await api.post("/auth/register", {
         username,
         email,
         password,
